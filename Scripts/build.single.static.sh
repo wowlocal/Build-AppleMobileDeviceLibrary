@@ -33,7 +33,8 @@ pushd openssl
 git clean -fdx -f
 git reset --hard
 git checkout $(wget -q -O- https://api.github.com/repos/openssl/openssl/releases/latest | jq -r '.tag_name')
-./config darwin64-$ARCH-cc --prefix=$BUILD_PREFIX -no-shared no-tests 
+echo Configuring openssl
+./config darwin64-$ARCH-cc --prefix=$BUILD_PREFIX -no-shared no-tests
 make -j$(nproc)
 make install_sw
 
@@ -54,6 +55,7 @@ for GIT_REPOSITORY in "${GIT_REPOSITORY_LIST[@]}"; do
     pushd $DIRNAME
     git clean -fdx -f
     git reset --hard
+    echo -e "${BOLD}#### Building ${DIRNAME} ####${NORMAL}"
     ./autogen.sh --prefix=$BUILD_PREFIX --enable-shared=no --enable-static=yes
     make -j$(nproc)
     make install

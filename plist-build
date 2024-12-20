@@ -1,0 +1,81 @@
+COMPONENTS="libplist:master"
+
+TARGET_ARCH="x86_64"
+
+export ARCH=$TARGET_ARCH
+
+echo "[*] building for $TARGET_ARCH"
+
+export CFLAGS="-mmacosx-version-min=10.13 -arch $ARCH"
+export CPPFLAGS="-mmacosx-version-min=10.13 -arch $ARCH"
+export LDFLAGS="-mmacosx-version-min=10.13 -arch $ARCH"
+
+CURDIR=`pwd`
+
+
+if test -z "$PREFIX"; then
+  PREFIX=$CURDIR/test_build
+else
+  echo -e "${YELLOW}NOTE: Using externally defined PREFIX. If that's not what you want, run: unset PREFIX${NORMAL}"
+fi
+
+
+
+function error_out {
+  echo -e "${RED}ERROR: ${STEP} failed for ${COMP}, check ${YELLOW}${LOGF}${RED} for details.${NORMAL}"
+  exit 1
+}
+
+if test -z "$NO_CLONE"; then
+echo
+echo -e "${CYAN}######## UPDATING SOURCES ########${NORMAL}"
+echo
+for I in $COMPONENTS; do
+  COMP=`echo $I |cut -d ":" -f 1`;
+  CVER=`echo $I |cut -d ":" -f 2`;
+  if test -d "$COMP/.git" && ! test -f "$COMP/.git/shallow"; then
+    cd $COMP
+    if test -z "`git branch |grep '$CVER'`"; then
+      git checkout $CVER --quiet || error_exit "Failed to check out $CVER"
+    fi
+    if test "$CVER" != "master"; then
+      echo "Updating $COMP (release $CVER)";
+    else
+      echo "Updating $COMP";
+    fi
+    git reset --hard --quiet
+    git pull --quiet || error_exit "Failed to pull from git $COMP"
+    cd "$CURDIR"
+  else
+    rm -rf $COMP
+    if test "$CVER" != "master"; then
+      echo "Cloning $COMP (release $CVER)";
+      git clone -b $CVER https://github.com/libimobiledevice/$COMP 2>/dev/null || error_exit "Failed to clone $COMP"
+    else
+      echo "Cloning $COMP (master)";
+      git clone https://github.com/libimobiledevice/$COMP 2>/dev/null || error_exit "Failed to clone $COMP"
+    fi
+  fi
+done
+fi
+
+COMP=libplist
+echo -e "${BOLD}#### Building libplist ####${NORMAL}"
+cd libplist
+echo -e "[*] Configuring..."
+STEP=configure
+LOGF=$CURDIR/${COMP}_${STEP}.log
+./autogen.sh --prefix="$PREFIX" --without-cython > "$LOGF" 2>&1 || error_out
+echo -e "[*] Building..."
+STEP=build
+LOGF=$CURDIR/${COMP}_${STEP}.log
+make clean > /dev/null 2>&1
+make V=1 > "$LOGF" 2>&1 || error_out
+echo -e "[*] Installing..."
+STEP=install
+LOGF=$CURDIR/${COMP}_${STEP}.log
+$INSTALL_SUDO make install > "$LOGF" 2>&1 || error_out
+LIBPLIST_CFLAGS="-I$PREFIX/include"
+LIBPLIST_LIBS="-L$PREFIX/lib -lplist-2.0"
+LIBPLIST_VERSION=`cat src/libplist-2.0.pc |grep Version: |cut -d " " -f 2`
+cd "$CURDIR"

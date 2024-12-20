@@ -1,6 +1,7 @@
 #!/bin/bash
 
 set -e
+set -x
 
 cd $(dirname $0)
 
@@ -8,8 +9,8 @@ if [ "$1" == "clean" ]; then
     git clean -fdx -f
 fi
 
-./check.sh
-./build.universal.sh
+# ./check.sh
+# ./build.universal.sh
 ./check.output.sh
 ./build.xcframework.sh
 ./build.spm.sh

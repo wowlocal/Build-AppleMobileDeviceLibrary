@@ -38,6 +38,10 @@ do
     do
         if [ -z "$(lipo -info $FILE | grep -E "$TARGET_ARCH")" ]; then
             OUTPUT_ERROR_LIST+=($FILE)
+            echo "[!] check failed $FILE"
+            echo "    lipo -info $FILE"
+            echo " Expected: $TARGET_ARCH"
+            echo " Actual: $(lipo -info $FILE | grep -E "$TARGET_ARCH")"
             ERROR_FOUND=true
         fi
     done
