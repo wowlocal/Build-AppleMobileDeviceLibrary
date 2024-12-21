@@ -1,0 +1,2 @@
+* Build with OpenSSL. try to adapt limd-build-macos script.
+* Why nikias's picked hidden libcrypto.35.tbd & libssl.35.tbd?
